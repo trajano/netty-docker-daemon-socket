@@ -30,15 +30,16 @@ public class CheckDockerSocket {
             bootstrap
                     .group(epollEventLoopGroup)
                     .channel(EpollDomainSocketChannel.class)
-                    .handler(new ChannelInitializer<UnixChannel>() {
+                    .handler(new ChannelInitializer<>() {
                         @Override
-                        public void initChannel(UnixChannel ch) throws Exception {
+                        public void initChannel(final Channel ch) throws Exception {
                             ch
                                     .pipeline()
                                     .addLast(new HttpClientCodec())
                                     .addLast(new HttpContentDecompressor())
                                     .addLast(new SimpleChannelInboundHandler<HttpObject>() {
                                         private StringBuilder messageBuilder = new StringBuilder();
+
                                         @Override
                                         public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
                                             if (msg instanceof HttpContent) {
@@ -56,7 +57,7 @@ public class CheckDockerSocket {
                     });
             final Channel channel = bootstrap.connect(new DomainSocketAddress("/var/run/docker.sock")).sync().channel();
 
-            final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/sexrvices", Unpooled.EMPTY_BUFFER);
+            final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/services", Unpooled.EMPTY_BUFFER);
             request.headers().set(HttpHeaderNames.HOST, "daemon");
             channel.writeAndFlush(request);
             channel.closeFuture().sync();
@@ -91,6 +92,7 @@ public class CheckDockerSocket {
                                     .addLast(new HttpClientCodec())
                                     .addLast(new SimpleChannelInboundHandler<HttpObject>() {
                                         private StringBuilder messageBuilder = new StringBuilder();
+
                                         @Override
                                         protected void channelRead0(ChannelHandlerContext channelHandlerContext, HttpObject httpObject) throws Exception {
                                             System.out.println(channelHandlerContext + " " + httpObject);
