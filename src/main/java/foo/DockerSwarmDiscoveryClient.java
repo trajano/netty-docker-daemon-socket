@@ -61,10 +61,11 @@ public class DockerSwarmDiscoveryClient implements DiscoveryClient {
                             public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
                                 if (msg instanceof HttpContent) {
                                     HttpContent content = (HttpContent) msg;
-                                    messageBuilder.append(content.content().toString(StandardCharsets.UTF_8));
-                                    if (msg instanceof LastHttpContent) {
-                                        System.out.println(messageBuilder);
-                                    }
+                                    System.out.println(content.content().toString(StandardCharsets.UTF_8));
+//                                    messageBuilder.append(content.content().toString(StandardCharsets.UTF_8));
+//                                    if (msg instanceof LastHttpContent) {
+//                                        System.out.println(messageBuilder);
+//                                    }
                                 } else {
                                     System.out.println(msg.getClass());
                                 }
@@ -74,7 +75,7 @@ public class DockerSwarmDiscoveryClient implements DiscoveryClient {
             });
         final Channel channel = bootstrap.connect(new DomainSocketAddress("/var/run/docker.sock")).sync().channel();
 
-        final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/services", Unpooled.EMPTY_BUFFER);
+        final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/events", Unpooled.EMPTY_BUFFER);
         request.headers().set(HttpHeaderNames.HOST, "daemon");
         channel.writeAndFlush(request);
         channel.closeFuture().sync();
