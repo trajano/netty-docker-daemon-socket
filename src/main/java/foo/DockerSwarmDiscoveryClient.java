@@ -8,17 +8,37 @@ import io.netty.handler.codec.http.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
 import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Component
 public class DockerSwarmDiscoveryClient implements DiscoveryClient {
 
     @Autowired
     private EventLoopGroup theEventLoopGroup;
+//
+//    public void uds2() {
+//        /*
+//         * Does not work because WebFlux does not allow creation of non-TCP connections to HTTP
+//         */
+//        System.out.println(WebClient.builder()
+//            .clientConnector(new ReactorClientHttpConnector(theHttpClient))
+//            .build()
+//            .get()
+//            .uri("http://daemon/services")
+//            .exchange()
+//            .block()
+//            .bodyToMono(String.class)
+//            .block());
+//    }
 
     @PostConstruct
     public void uds() throws Exception {
@@ -67,12 +87,14 @@ public class DockerSwarmDiscoveryClient implements DiscoveryClient {
 
     @Override
     public List<ServiceInstance> getInstances(String serviceId) {
-        return null;
+        return serviceInstanceMap.computeIfAbsent(serviceId, s -> List.of());
     }
+
+    private ConcurrentMap<String, List<ServiceInstance>> serviceInstanceMap = new ConcurrentHashMap<>();
 
     @Override
     public List<String> getServices() {
-        return null;
+        return List.copyOf(serviceInstanceMap.keySet());
     }
 
 }

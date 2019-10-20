@@ -14,9 +14,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
+import reactor.core.publisher.Mono;
+import reactor.netty.Connection;
 import reactor.netty.http.client.HttpClient;
-
-import java.nio.charset.StandardCharsets;
+import reactor.netty.tcp.TcpClient;
 
 @SpringBootApplication
 public class CheckDockerSocket {
@@ -33,14 +34,35 @@ public class CheckDockerSocket {
         return new EpollEventLoopGroup();
     }
 
+    //    @Bean
+//    public TcpClient tcpClient(final EventLoopGroup eventLoopGroup) {
+//        return TcpClient.create(new ConnectionProvider() {
+//            @Override
+//            public Mono<? extends Connection> acquire(Bootstrap bootstrap) {
+//                return null;
+//            }
+//        })
+//    }
+//    @Bean
+//    public HttpClient httpClient(TcpClient tcpClient) {
+//        return HttpClient.create(tcpClient);
+//    }
+
     @Bean
-    public HttpClient httpClient(final EventLoopGroup eventLoopGroup) {
-        return HttpClient.create(bootstrap -> {
-            bootstrap
-                .group(eventLoopGroup)
-                .channel(EpollDomainSocketChannel.class)
-                .connect();
-            return null;
+    public TcpClient tcpClient(final EventLoopGroup eventLoopGroup) {
+        return TcpClient.create(bootstrap -> {
+            try {
+                return Mono.just(
+                    Connection.from(bootstrap
+                        .group(eventLoopGroup)
+                        .channel(EpollDomainSocketChannel.class)
+                        .connect(new DomainSocketAddress("/var/run/docker.sock"))
+                        .sync()
+                        .channel()));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
         });
     }
 
